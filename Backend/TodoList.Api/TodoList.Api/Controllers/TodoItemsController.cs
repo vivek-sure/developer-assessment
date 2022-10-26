@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Linq;
+using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
+using TodoList.Api.Contexts.TodoContext;
+using TodoList.Api.Services;
 
 namespace TodoList.Api.Controllers
 {
@@ -11,20 +12,18 @@ namespace TodoList.Api.Controllers
     [ApiController]
     public class TodoItemsController : ControllerBase
     {
-        private readonly TodoContext _context;
-        private readonly ILogger<TodoItemsController> _logger;
+        private readonly ITodoService _service;
 
-        public TodoItemsController(TodoContext context, ILogger<TodoItemsController> logger)
+        public TodoItemsController(ITodoService service)
         {
-            _context = context;
-            _logger = logger;
+            _service = service;
         }
 
         // GET: api/TodoItems
         [HttpGet]
         public async Task<IActionResult> GetTodoItems()
         {
-            var results = await _context.TodoItems.Where(x => !x.IsCompleted).ToListAsync();
+            var results = await _service.GetTodoItems();
             return Ok(results);
         }
 
@@ -32,11 +31,11 @@ namespace TodoList.Api.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTodoItem(Guid id)
         {
-            var result = await _context.TodoItems.FindAsync(id);
+            var result = await _service.GetTodoItemById(id);
 
             if (result == null)
             {
-                return NotFound();
+                return NotFound("No record was found with the provided Id");
             }
 
             return Ok(result);
@@ -46,60 +45,35 @@ namespace TodoList.Api.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutTodoItem(Guid id, TodoItem todoItem)
         {
-            if (id != todoItem.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(todoItem).State = EntityState.Modified;
-
             try
             {
-                await _context.SaveChangesAsync();
+                var result = await _service.PutTodoItem(id, todoItem);
+                return Ok(result);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (ValidationException ex)
             {
-                if (!TodoItemIdExists(id))
+                if (ex.Message == "The Id specified could not be found")
                 {
-                    return NotFound();
+                    return NotFound("No record was found with the provided Id to replace");
                 }
-                else
-                {
-                    throw;
-                }
-            }
 
-            return NoContent();
+                return BadRequest(ex.Message);
+            }
         } 
 
         // POST: api/TodoItems 
         [HttpPost]
         public async Task<IActionResult> PostTodoItem(TodoItem todoItem)
         {
-            if (string.IsNullOrEmpty(todoItem?.Description))
+            try
             {
-                return BadRequest("Description is required");
+                var result = await _service.CreateTodoItem(todoItem);
+                return CreatedAtAction(nameof(GetTodoItem), new { id = result.Id }, result);
             }
-            else if (TodoItemDescriptionExists(todoItem.Description))
+            catch (ValidationException ex)
             {
-                return BadRequest("Description already exists");
-            } 
-
-            _context.TodoItems.Add(todoItem);
-            await _context.SaveChangesAsync();
-             
-            return CreatedAtAction(nameof(GetTodoItem), new { id = todoItem.Id }, todoItem);
-        } 
-
-        private bool TodoItemIdExists(Guid id)
-        {
-            return _context.TodoItems.Any(x => x.Id == id);
-        }
-
-        private bool TodoItemDescriptionExists(string description)
-        {
-            return _context.TodoItems
-                   .Any(x => x.Description.ToLowerInvariant() == description.ToLowerInvariant() && !x.IsCompleted);
+                return BadRequest(ex.Message);
+            }
         }
     }
 }
