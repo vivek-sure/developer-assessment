@@ -1,6 +1,6 @@
 using System;
 
-namespace TodoList.Api
+namespace TodoList.Api.Contexts.TodoContext
 {
     public class TodoItem
     {
