@@ -10,15 +10,13 @@ namespace TodoList.Api.UnitTests
         private readonly TodoService _service;
 
         private readonly TodoItem _testItem;
-        
-
 
         /// <summary>
         /// Initialize our test data and servies
         /// </summary>
-        /// <param name="fixture">Test fixture</param>
-        public TodoServiceTests(TodoContextFixture fixture)
+        public TodoServiceTests()
         {
+            var fixture = new TodoContextFixture();
             _service = new TodoService(fixture.todoContext);
             // Create our test data
             _testItem = _service.CreateTodoItem(new TodoItem()

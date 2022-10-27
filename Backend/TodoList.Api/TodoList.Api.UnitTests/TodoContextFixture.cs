@@ -6,14 +6,14 @@ namespace TodoList.Api.UnitTests
     /// <summary>
     /// Context for testing todo data
     /// </summary>
-    public abstract class TodoContextFixture
+    public class TodoContextFixture
     {
         public TodoContext todoContext;
 
         /// <summary>
         /// Create our inmemory context for testing
         /// </summary>
-        protected TodoContextFixture()
+        public TodoContextFixture()
         {
             var dbContextOptionsBuilder = new DbContextOptionsBuilder<TodoContext>();
             dbContextOptionsBuilder.UseInMemoryDatabase("TodoItemsDB");
