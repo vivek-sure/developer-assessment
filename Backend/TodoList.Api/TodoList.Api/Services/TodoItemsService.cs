@@ -90,7 +90,8 @@ namespace TodoList.Api.Services
             {
                 throw new ValidationException("Description is required");
             }
-            else if (TodoItemDescriptionExists(todoItem.Description))
+
+            if (TodoItemDescriptionExists(todoItem.Description))
             {
                 throw new ValidationException("Description already exists");
             }
